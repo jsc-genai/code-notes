@@ -19,8 +19,8 @@ ins_wh AS (
   RETURNING warehouse_id, store_id, tenant_id
 ),
 ins_admin AS (
-  INSERT INTO auth.users (store_id, email, phone, password_hash, display_name, is_active, email_verified_at)
-  SELECT store_id, 'admin@acme.co', '+62-812-0000-0000', '$2b$12$hash_here', 'ACME Admin', true, now()
+  INSERT INTO auth.users (store_id, phone, password_hash, display_name, is_active, email_verified_at)
+  SELECT store_id, '+62-812-0000-0000', '$2b$12$hash_here', 'ACME Admin', true, now()
   FROM ins_store
   RETURNING user_id
 )
