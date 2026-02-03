@@ -1,4 +1,4 @@
-CREATE DATABASE ecommerce_rbac WITH ENCODING = 'UTF8' LC_COLLATE = 'en_US.utf8' LC_CTYPE = 'en_US.utf8' TEMPLATE = template0;
+CREATE DATABASE ecommerce_app WITH ENCODING = 'UTF8' LC_COLLATE = 'en_US.utf8' LC_CTYPE = 'en_US.utf8' TEMPLATE = template0;
 -- for gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- case-insensitive email
@@ -51,8 +51,7 @@ CREATE TABLE auth.users (
         updated_at timestamptz NOT NULL DEFAULT now()
 );
 -- common API: login by email, active users
-CREATE INDEX idx_users_active ON auth.users(is_active)
-WHERE is_active = true;
+CREATE INDEX idx_users_active ON auth.users(is_active) WHERE is_active = true;
 CREATE TABLE auth.sessions (
     session_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL REFERENCES auth.users(user_id) ON DELETE CASCADE,
@@ -64,8 +63,7 @@ CREATE TABLE auth.sessions (
     revoked_at timestamptz
 );
 CREATE INDEX idx_sessions_user_id ON auth.sessions(user_id);
-CREATE INDEX idx_sessions_valid ON auth.sessions(user_id, expires_at)
-WHERE revoked_at IS NULL;
+CREATE INDEX idx_sessions_valid ON auth.sessions(user_id, expires_at) WHERE revoked_at IS NULL;
 CREATE TABLE auth.roles (
     role_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     role_code text NOT NULL UNIQUE,
@@ -151,8 +149,7 @@ CREATE TABLE auth.menus (
     is_active boolean NOT NULL DEFAULT true
 );
 CREATE INDEX idx_menus_parent ON auth.menus(parent_menu_id);
-CREATE INDEX idx_menus_active ON auth.menus(is_active)
-WHERE is_active = true;
+CREATE INDEX idx_menus_active ON auth.menus(is_active) WHERE is_active = true;
 CREATE TABLE catalog.categories (
     category_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id uuid NOT NULL REFERENCES master.stores(store_id) ON DELETE CASCADE,
@@ -167,8 +164,7 @@ CREATE TABLE catalog.categories (
         UNIQUE (store_id, slug)
 );
 CREATE INDEX idx_categories_store_parent ON catalog.categories(store_id, parent_id);
-CREATE INDEX idx_categories_active ON catalog.categories(store_id, is_active)
-WHERE is_active = true;
+CREATE INDEX idx_categories_active ON catalog.categories(store_id, is_active) WHERE is_active = true;
 CREATE TABLE catalog.products (
     product_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id uuid NOT NULL REFERENCES master.stores(store_id) ON DELETE CASCADE,
@@ -205,8 +201,7 @@ CREATE TABLE catalog.product_variants (
     UNIQUE (product_id, variant_sku)
 );
 CREATE INDEX idx_variants_product ON catalog.product_variants(product_id);
-CREATE INDEX idx_variants_active ON catalog.product_variants(is_active)
-WHERE is_active = true;
+CREATE INDEX idx_variants_active ON catalog.product_variants(is_active) WHERE is_active = true;
 CREATE TABLE catalog.product_images (
     image_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id uuid NOT NULL REFERENCES catalog.products(product_id) ON DELETE CASCADE,
@@ -228,18 +223,21 @@ CREATE TABLE sales.carts (
         expires_at timestamptz
 );
 -- Fast "get my active cart"
-CREATE INDEX idx_carts_active_by_user ON sales.carts(user_id, updated_at DESC)
-WHERE status = 'active'
-    AND user_id IS NOT NULL;
+CREATE INDEX idx_carts_active_by_user ON sales.carts(user_id, updated_at DESC) WHERE status = 'active' AND user_id IS NOT NULL;
 CREATE INDEX idx_carts_store_status ON sales.carts(store_id, status, updated_at DESC);
-CREATE TABLE sales.cart_items (
-    cart_item_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    cart_id uuid NOT NULL REFERENCES sales.carts(cart_id) ON DELETE CASCADE,
-    variant_id uuid NOT NULL REFERENCES catalog.product_variants(variant_id) ON DELETE RESTRICT,
-    quantity int NOT NULL CHECK (quantity > 0),
-    unit_price numeric(12, 2) NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (cart_id, variant_id)
+create table sales.cart_items (
+    cart_item_id uuid primary key default gen_random_uuid(),
+    cart_id uuid not null references sales.carts(cart_id) on
+delete
+	cascade,
+	variant_id uuid not null references catalog.product_variants(variant_id) on
+	delete
+		restrict,
+		quantity int not null check (quantity > 0),
+		unit_price numeric(12, 2) not null,
+		created_at timestamptz not null default now(),
+		unique (cart_id,
+		variant_id)
 );
 CREATE INDEX idx_cart_items_cart ON sales.cart_items(cart_id);
 CREATE INDEX idx_cart_items_variant ON sales.cart_items(variant_id);
@@ -252,8 +250,7 @@ CREATE TABLE inventory.warehouses (
     created_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (store_id, code)
 );
-CREATE INDEX idx_warehouses_store_active ON inventory.warehouses(store_id, is_active)
-WHERE is_active = true;
+CREATE INDEX idx_warehouses_store_active ON inventory.warehouses(store_id, is_active) WHERE is_active = true;
 CREATE TABLE inventory.stock_levels (
     store_id uuid NOT NULL REFERENCES master.stores(store_id) ON DELETE CASCADE,
     warehouse_id uuid NOT NULL REFERENCES inventory.warehouses(warehouse_id) ON DELETE CASCADE,
